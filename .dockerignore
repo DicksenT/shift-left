@@ -1,0 +1,8 @@
+node_modules
+.git
+.env.local
+Dockerfile.*
+coverage
+logs
+*.log
+dist
