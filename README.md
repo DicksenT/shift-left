@@ -81,3 +81,13 @@ git clone https://github.com/DicksenT/shift-left.git
 cd shift-left
 npm install
 npm run dev
+
+---
+
+## 🔐 Environment Variables
+
+Create a `.env.local` file:
+
+```env
+OPENAI_API_KEY=your-openai-key
+SNYK_TOKEN=your-snyk-token
