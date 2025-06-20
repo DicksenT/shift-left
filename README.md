@@ -1,36 +1,83 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🛡️ Shift-Left – Dev-First Security Dashboard
 
-## Getting Started
+**Shift-Left** helps developers catch and understand security risks *before code is deployed*.
 
-First, run the development server:
+It scans GitHub repos using **industry-standard tools** (Snyk, Trivy, Semgrep), simulates real-world attacks, and explains vulnerabilities in plain English — all in one clean, interactive dashboard.
+
+---
+
+## 🌐 Live Demo
+
+👉 [shiftLeft.dicksentan.com](https://shiftleft.dicksentan.com)
+
+> ⚠️ Cold start may take a few seconds. 
+
+---
+
+## Video Demo
+
+👉 https://www.loom.com/share/2d3f8594c09f496ba2c145eb4d9872d5?sid=3a78e4cd-69ce-4bdd-b114-51e257e9c523
+
+> Please understand im nervous 😬
+
+---
+
+## Screenshot
+
+![Homepage Overview](./public/homePage.png)
+![Scan Page Overview](./public/scanPage.png)
+![Vulnerability Modal](./public/modal.png)
+
+---
+
+## 🔍 Key Features
+
+- ✅ **Unified scanning pipeline** — integrates Snyk, Trivy, and Semgrep into a single flow
+- 📊 **Interactive dashboard** — filter issues by severity, tool, and source file
+- 🤖 **AI-powered insight** — plain-language vulnerability explanations (OpenAI)  
+- 🐍 **HackMe simulator** — CLI-style terminal log of realistic attacks (SQLi, RCE, etc.)
+- 🚀 **Deploy-ready architecture** — serverless Next.js API, Fly.io backend, Vercel UI
+- 🔐 **Secure execution** — sandboxed scanners, streaming output, no GitHub login required
+
+---
+
+## 🛠 Tech Stack
+
+| Layer       | Stack                                     |
+|-------------|-------------------------------------------|
+| Frontend    | Next.js 15, TailwindCSS, TypeScript       |
+| Backend     | Node.js, Next.js API Routes, OpenAI SDK   |
+| Scanners    | Snyk, Trivy, Semgrep (via CLI + `exec()`) |
+| Deployment  | Vercel (UI) + Fly.io (API) + Docker       |
+
+---
+
+## ⚙️ How It Works
+
+### 1. Paste a GitHub Repository URL
+
+Paste any public repo (e.g. `https://github.com/vercel/next.js`) into the input box.
+
+The app will:
+
+- Clone the repo inside a temporary Docker container
+- Run **Snyk**, **Trivy**, and **Semgrep** scans
+- Normalize and visualize results
+
+### 2. Explore Findings
+
+Click a vulnerability card to see:
+
+- 🤖 **AI Explanation** — plain-text breakdown of the risk
+- 🚨 **Hack Simulation** — attack logs (e.g. `[INFO] SQL injection payload sent`)
+- 🛡️ **Defense Tips** — mitigation advice (if detected)
+
+---
+
+## 🧱 Local Development
 
 ```bash
+git clone https://github.com/DicksenT/shift-left.git
+cd shift-left
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
