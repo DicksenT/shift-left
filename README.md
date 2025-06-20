@@ -74,6 +74,16 @@ Click a vulnerability card to see:
 
 ---
 
+## 🔐 Environment Variables
+
+Create a `.env.local` file:
+
+```env
+OPENAI_API_KEY=your-openai-key
+SNYK_TOKEN=your-snyk-token
+
+---
+
 ## 🧱 Local Development
 
 ```bash
@@ -82,12 +92,5 @@ cd shift-left
 npm install
 npm run dev
 
----
 
-## 🔐 Environment Variables
 
-Create a `.env.local` file:
-
-```env
-OPENAI_API_KEY=your-openai-key
-SNYK_TOKEN=your-snyk-token
