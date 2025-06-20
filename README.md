@@ -18,7 +18,7 @@ It scans GitHub repos using **industry-standard tools** (Snyk, Trivy, Semgrep), 
 
 👉 https://www.loom.com/share/2d3f8594c09f496ba2c145eb4d9872d5?sid=3a78e4cd-69ce-4bdd-b114-51e257e9c523
 
-> Please understand im nervous 😬
+> Please understand im nervous 😬 (Open subtitle for more clarity)
 
 ---
 
