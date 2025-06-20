@@ -51,7 +51,7 @@ export default function Homepage() {
           {/* Vulnerability Context */}
           <div className="bg-slate-900/50 border-l-4 border-red-500 px-4 py-3 mb-8">
             <p className="font-semibold">
-              LET&rsquoS SAY YOUR CODE HAS:  
+              IMAGINE YOUR CODE HAS:  
               <span className="text-red-400 ml-2 font-mono">{simulatedVuln.title}</span>
             </p>
             <p className="text-slate-400 mt-1 text-sm">
