@@ -13,5 +13,5 @@ You are a security expert. Explain the vulnerability clearly in one sentence usi
     prompt: desc,
   });
 
-  return NextResponse.json({data: text},{status: 200, headers:{'Access-Control-Allow-Origin': '*'}})
+  return NextResponse.json({data: text},{status: 200,})
 }

@@ -5,7 +5,7 @@ import { useState } from "react"
 export default function SimulatedHack({desc} : {desc: string}){
     const [hack, setHack] = useState<string>('')
     const handleHacking = async() =>{
-        const response = await fetch('https://shift-left.fly.dev/api/hack',{
+        const response = await fetch('/api/hack',{
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'

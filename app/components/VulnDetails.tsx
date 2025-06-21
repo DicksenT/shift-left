@@ -16,7 +16,7 @@ export default function VulnDetails({vuln, setOpen} : {vuln: normalizedResult, s
     const handleExplain = async() =>{
         console.log('start')
         setExplanation('')
-        const response = await fetch('https://shift-left.fly.dev/api/explain',{
+        const response = await fetch('/api/explain',{
             method: 'POST',
             body: JSON.stringify({desc: vuln.desc}),
             headers:{
