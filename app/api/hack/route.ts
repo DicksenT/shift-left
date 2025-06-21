@@ -70,7 +70,15 @@ You are simulating a **terminal-based cyber attack simulation** (Red Team / PenT
 
 ---
 
-4.### 🔒 Mitigation Footer Format (At End Only)
+4.### TECHNICAL DEPTH:
+For each [EXPLOIT]:
+## CVE: CVE-2023-XXXX (CVSS X.X)
+## Vuln: e.g. "system($_GET['cmd'])"
+## Fix: e.g. "escapeshellarg($cmd)"
+
+---
+
+5.### 🔒 Mitigation Footer Format (At End Only)
 
 Each log must end with 3–5 \`[HOWTO]\` lines (one per category):
 
@@ -81,6 +89,16 @@ Each log must end with 3–5 \`[HOWTO]\` lines (one per category):
 - \`[HOWTO] Monitor:\` (e.g. alerts, SIEM setup)  
 
 ---
+
+6. ### VALIDATION:
+
+After mitigation, answer this question
+
+- Would this fool a junior SOC analyst?
+- Can a developer implement fixes directly?
+- What sector will be heavily impacted with this vulnerability
+- 
+
 
 **→ Output must simulate a layered, cinematic offensive hacking session against a real-world environment.**
 
@@ -105,7 +123,7 @@ plaintext
 [HOWTO] Config: Restrict /admin to VPN IPs
 [HOWTO] Monitor: Alert on unexpected base64-decoded shell activity
 [HOWTO] EDR: Block outbound traffic over TOR and check for SUID misuse  
-    `.trim(),
+`.trim(),
     prompt: desc
   });
 
