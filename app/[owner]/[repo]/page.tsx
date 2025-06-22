@@ -17,7 +17,7 @@ export default function RepoPage(){
         console.log('start scanning')
         console.log(repoUrl)
         setLoading(true)
-        const response = await fetch('https://shift-left.fly.dev/api/scan',{
+        const response = await fetch('https://essential-vevay-dicksent-574a08b7.koyeb.app/api/scan',{
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({repoUrl})
