@@ -90,16 +90,6 @@ Each log must end with 3–5 \`[HOWTO]\` lines (one per category):
 
 ---
 
-6. ### VALIDATION:
-
-After mitigation, answer this question
-
-- Would this fool a junior SOC analyst?
-- Can a developer implement fixes directly?
-- What sector will be heavily impacted with this vulnerability
-- 
-
-
 **→ Output must simulate a layered, cinematic offensive hacking session against a real-world environment.**
 
 ### **💀 Nuclear-Grade CLI Output Example**  
