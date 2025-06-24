@@ -9,36 +9,49 @@ import { useEffect, useState } from "react";
 export default function RepoPage(){
     const { owner, repo } = useParams()
     const [scanResult, setScanResult] = useState<normalizedResult[]>([])
+    const [scanId, setScanId] = useState<string>('')
     const [loading, setLoading] = useState<boolean>(false)
     const repoUrl = `https://github.com/${owner}/${repo}.git`
 
     const handleScan = async() =>{
         if(loading) return
-        console.log('start scanning')
-        console.log(repoUrl)
         setLoading(true)
-        const response = await fetch('https://essential-vevay-dicksent-574a08b7.koyeb.app/api/scan',{
+        const response = await fetch('/api/scan',{
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({repoUrl})
         })
         if(response.ok){
             console.log('success')
-            const {data} = await response.json() 
-            setScanResult(sortSeverity(data))
-            setLoading(false)
+            const {scanId} = await response.json()
+            console.log(scanId)
+            setScanId(scanId)
         }
-        setLoading(false)
-
     }
     useEffect(() =>{
         const timeout = setTimeout(() => {
-                    handleScan()            
+            handleScan()            
         }, 300);
         return() =>{
             clearTimeout(timeout)
         }
     },[])
+
+     
+    useEffect(() =>{
+        if(!loading || !scanId) return
+        const interval = setInterval(async() =>{
+            console.log('here')
+            if(!loading) return
+            const response = await fetch(`/api/scan?scanId=${scanId}`)
+            if(response.ok && response.status === 200){
+                const {data} = await response.json()
+                setScanResult(sortSeverity(data))
+                setLoading(false)
+            }
+        },5000)
+        return() =>{clearInterval(interval)}        
+    },[loading, scanId])
     return(
         <section className="overflow-y-scroll py-2 px-3 h-screen w-screen text-text bg-slate-900 text-slate-200">
             <h2 className='text-2xl font-bold pt-2 w-full text-clip overflow-hidden whitespace-nowrap text-center my-4'>{repo}</h2>
