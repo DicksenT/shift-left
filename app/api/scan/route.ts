@@ -31,6 +31,69 @@ const normalizedSeverity = (source: 'trivy' | 'semgrep', severity: string): stri
   return "info";
 }
 
+const scanJobs: Record<string, {status: 'done' | 'pending' | 'failed', result: normalizedResult[]}> ={}
+
+const snykScan = async(tmpDir: string, jobId: string) =>{
+    try{
+        const {stdout, stderr} = await run(`snyk test --json`,{
+            cwd: tmpDir,
+            env: {...process.env, SNYK_TOKEN: process.env.SNYK_TOKEN}
+        })
+        JSON.parse(stdout).vulnerabilities?.map((vuln: any) =>{
+            scanJobs[jobId].result.push({
+                source: 'snyk',
+                title: vuln.title,
+                desc: vuln.description,
+                severity: vuln.severity,
+            })
+        })
+    }catch(err: any){
+        if(err?.stdout){
+            JSON.parse(err.stdout).vulnerabilities?.map((vuln: any) =>{
+            scanJobs[jobId].result.push({
+                source: 'snyk',
+                title: vuln.title,
+                desc: vuln.description,
+                severity: vuln.severity,
+            })
+        })
+        }
+    }
+}
+
+const trivyScan = async(tmpDir:string, jobId: string) =>{
+    const {stdout} = await run(`trivy fs --quiet --format json .`, {cwd: tmpDir})
+    JSON.parse(stdout).Results[0]?.Vulnerabilities?.map((vuln : any) =>{
+        scanJobs[jobId].result.push({
+            source:'trivy',
+            desc: vuln.Description,
+            severity: normalizedSeverity( 'trivy' ,vuln.Severity ),
+            title: vuln.Title,
+        })
+    })
+}
+
+const semgrepScan = async(tmpDir: string, jobId: string) =>{
+    const {stdout} = await run(`semgrep --config auto --json`,{cwd: tmpDir})
+    JSON.parse(stdout).result?.map((vuln: any) =>{
+        scanJobs[jobId].result.push({
+            source: 'semgrep',
+            desc: vuln.extra.message,
+            severity: normalizedSeverity( 'semgrep' ,vuln.extra.severity )
+        })
+    })
+}
+
+const handleScan = async(tmpdir: string, jobId: string) =>{
+    await Promise.all([
+        await snykScan(tmpdir, jobId),
+        await semgrepScan(tmpdir, jobId)
+    ])
+    await trivyScan(tmpdir, jobId)
+    scanJobs[jobId].status = 'done'
+    await fs.rm(tmpdir, {recursive: true, force: true})
+}
+
 export async function OPTIONS() {
   return new Response(null, {
     status: 204,
