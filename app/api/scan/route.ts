@@ -141,7 +141,12 @@ export async function GET(req: NextRequest) {
     const {searchParams} = new URL(req.url)
     const scanId = searchParams.get('scanId')
     if(scanId && scanJobs[scanId].status === 'done'){
-        return NextResponse.json({data: scanJobs[scanId].result},{status:200})
+        return NextResponse.json({data: scanJobs[scanId].result},{status:200,   
+            headers: {
+    'Access-Control-Allow-Origin': '*',
+    }})
     }
-    return NextResponse.json({}, {status: 202})
+    return NextResponse.json({}, {status: 202,   headers: {
+    'Access-Control-Allow-Origin': '*',
+  }})
 }
