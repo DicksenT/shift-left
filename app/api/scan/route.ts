@@ -117,71 +117,15 @@ export async function POST(req: NextRequest){
 
         //clone the dir to tmp dir
         await run(`git clone --depth 1 ${repoUrl} ${tmpDir}`)
-        const result: normalizedResult[] = []
-            try{
-                const {stdout, stderr} = await run(`snyk test --json`, {
-                    cwd: tmpDir,
-                    env: { ...process.env, SNYK_TOKEN: process.env.SNYK_TOKEN },
-                    });
-                    JSON.parse(stdout).vulnerabilities.map((vuln: any) =>{
-                        result.push({
-                        source: 'snyk',
-                        title: vuln.title,
-                        desc: vuln.description,
-                        severity: vuln.severity,
-                        })
-                })
-
-            } catch (err: any) {
-                if (err?.stdout) {
-                    JSON.parse(err.stdout).vulnerabilities.map((vuln: any) =>{
-                        result.push({
-                        source: 'snyk',
-                        title: vuln.title,
-                        desc: vuln.description,
-                        severity: vuln.severity,
-                        })
-                })
-                }
-                };
-
-            try{
-                const {stdout} = await run(`trivy fs --quiet --format json .`, {cwd: tmpDir})
-                const trivyResult: normalizedResult[] = 
-                JSON.parse(stdout).Results[0]?.Vulnerabilities?.map((vuln : any) =>{
-                    result.push({
-                    source:'trivy',
-                    desc: vuln.Description,
-                    severity: normalizedSeverity( 'trivy' ,vuln.Severity ),
-                    title: vuln.Title,
-                    })
-                })
-
-            }catch(err: any){
-               
+        const jobId = crypto.randomUUID()
+        scanJobs[jobId] = {status: 'pending', result: []}
+        handleScan(tmpDir, jobId)
+        return NextResponse.json({scanId:jobId}, {
+            status: 200, 
+            headers:{
+                'Access-Control-Allow-Origin': '*'
             }
-
-            try{
-                const {stdout} = await run(`semgrep --config auto --json`,{cwd: tmpDir})
-                JSON.parse(stdout).results?.map((vuln: any) =>{
-                    result.push({
-                    source: 'semgrep',
-                    desc: vuln.extra.message,
-                    severity: normalizedSeverity( 'semgrep' ,vuln.extra.severity ),
-                    })
-                })
-
-            }catch(err: any){
-                
-            }
-            //make sure to remove the temporary directory
-            await fs.rm(tmpDir, {recursive: true, force: true})
-            return NextResponse.json({data: result}, {
-                status: 200, 
-                headers:{
-                    'Access-Control-Allow-Origin': '*'
-                }
-            })
+        })
     }catch(err: any){
         console.error('Scan failed: ',err)
         return NextResponse.json({error: err.message || 'scan failed'}, {
@@ -191,4 +135,13 @@ export async function POST(req: NextRequest){
             }
         })
     }
+}
+
+export async function GET(req: NextRequest) {
+    const {searchParams} = new URL(req.url)
+    const scanId = searchParams.get('scanId')
+    if(scanId && scanJobs[scanId].status === 'done'){
+        return NextResponse.json({data: scanJobs[scanId].result},{status:200})
+    }
+    return NextResponse.json({}, {status: 202})
 }
