@@ -16,7 +16,7 @@ export default function RepoPage(){
     const handleScan = async() =>{
         if(loading) return
         setLoading(true)
-        const response = await fetch('http://159.223.195.110/api/scan',{
+        const response = await fetch('https://scan.dicksentan.com/api/scan',{
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({repoUrl})
@@ -43,7 +43,7 @@ export default function RepoPage(){
         const interval = setInterval(async() =>{
             console.log('here')
             if(!loading) return
-            const url = `http://159.223.195.110/api/scan?scanId=${scanId}`
+            const url = `https://scan.dicksentan.com/api/scan?scanId=${scanId}`
             const response = await fetch(url)
             if(response.ok && response.status === 200){
                 const {data} = await response.json()
