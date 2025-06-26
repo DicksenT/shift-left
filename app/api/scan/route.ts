@@ -74,7 +74,7 @@ const trivyScan = async(tmpDir:string, jobId: string) =>{
 }
 
 const semgrepScan = async(tmpDir: string, jobId: string) =>{
-    const {stdout} = await run(`semgrep --config auto --json`,{cwd: tmpDir})
+    const {stdout} = await run(`semgrep --config p/default --timeout 60 --json --metrics=off --max-memory 300 -j 2`,{cwd: tmpDir})
     JSON.parse(stdout).result?.map((vuln: any) =>{
         scanJobs[jobId].result.push({
             source: 'semgrep',
@@ -87,9 +87,9 @@ const semgrepScan = async(tmpDir: string, jobId: string) =>{
 const handleScan = async(tmpdir: string, jobId: string) =>{
     await Promise.all([
         await snykScan(tmpdir, jobId),
-        await semgrepScan(tmpdir, jobId)
+        await trivyScan(tmpdir, jobId),
+        await semgrepScan(tmpdir, jobId) 
     ])
-    await trivyScan(tmpdir, jobId)
     scanJobs[jobId].status = 'done'
     await fs.rm(tmpdir, {recursive: true, force: true})
 }
@@ -117,10 +117,9 @@ export async function POST(req: NextRequest){
 
         //clone the dir to tmp dir
         await run(`git clone --depth 1 ${repoUrl} ${tmpDir}`)
-        const jobId = crypto.randomUUID()
-        scanJobs[jobId] = {status: 'pending', result: []}
-        handleScan(tmpDir, jobId)
-        return NextResponse.json({scanId:jobId}, {
+        scanJobs[scanId] = {status: 'pending', result: []}
+        handleScan(tmpDir, scanId)
+        return NextResponse.json({scanId}, {
             status: 200, 
             headers:{
                 'Access-Control-Allow-Origin': '*'
