@@ -16,7 +16,7 @@ It scans GitHub repos using **industry-standard tools** (Snyk, Trivy, Semgrep), 
 
 ## Video Demo
 
-👉 https://www.loom.com/share/2d3f8594c09f496ba2c145eb4d9872d5?sid=3a78e4cd-69ce-4bdd-b114-51e257e9c523
+👉 https://www.loom.com/share/df37c2743a044eb5bedbe85b182d6289?sid=1a71365a-978f-480d-8ec1-f104b9aa8515
 
 > Please understand im nervous 😬 (Open subtitle for more clarity)
 
@@ -41,6 +41,14 @@ It scans GitHub repos using **industry-standard tools** (Snyk, Trivy, Semgrep), 
 
 ---
 
+## 📈 Impact
+
+- Scanned public GitHub repos in testing
+- Detected and explained 300+ vulnerabilities
+- Helped developers simulate 5+ real-world attacks like SQLi and SSRF
+
+---
+
 ## 🛠 Tech Stack
 
 | Layer       | Stack                                     |
@@ -48,7 +56,7 @@ It scans GitHub repos using **industry-standard tools** (Snyk, Trivy, Semgrep), 
 | Frontend    | Next.js 15, TailwindCSS, TypeScript       |
 | Backend     | Node.js, Next.js API Routes, OpenAI SDK   |
 | Scanners    | Snyk, Trivy, Semgrep (via CLI + `exec()`) |
-| Deployment  | Vercel (UI) + Fly.io (API) + Docker       |
+| Deployment  | Vercel (UI) + DigitalOcean (API) + Docker |
 
 ---
 
