@@ -10,6 +10,21 @@ import Redis from 'ioredis'
 const run = promisify(exec)
 const redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
 
+const resumeQ = async() =>{
+    try{
+        const scanId = await redis.lindex(`scan:queue`,0)
+        if(scanId){
+            const status = await redis.get(`scan:${scanId}`)
+            if(!status || JSON.parse(status).status === 'pending'){
+                handleScan(scanId)
+            }
+        }
+    }catch(err){
+        console.error('Failed to resume scan', err)
+    }
+}
+resumeQ()
+
 export interface normalizedResult{
     source: 'snyk' | 'trivy' | 'semgrep';
     severity: string;
@@ -33,9 +48,9 @@ const normalizedSeverity = (source: 'trivy' | 'semgrep', severity: string): stri
   return "info";
 }
 
-let results: normalizedResult[] = []
 
-const snykScan = async(tmpDir: string, jobId: string) =>{
+
+const snykScan = async(tmpDir: string, jobId: string, results: normalizedResult[]) =>{
     try{
         const {stdout, stderr} = await run(`snyk test --json`,{
             cwd: tmpDir,
@@ -64,7 +79,7 @@ const snykScan = async(tmpDir: string, jobId: string) =>{
     }
 }
 
-const trivyScan = async(tmpDir:string, jobId: string) =>{
+const trivyScan = async(tmpDir:string, jobId: string,  results: normalizedResult[]) =>{
     const {stdout} = await run(`trivy fs --quiet --format json .`, {cwd: tmpDir})
     JSON.parse(stdout).Results[0]?.Vulnerabilities?.map((vuln : any) =>{
             results.push({
@@ -76,7 +91,7 @@ const trivyScan = async(tmpDir:string, jobId: string) =>{
     })
 }
 
-const semgrepScan = async(tmpDir: string, jobId: string) =>{
+const semgrepScan = async(tmpDir: string, jobId: string,  results: normalizedResult[]) =>{
     const {stdout} = await run(`semgrep --config p/default --timeout 60 --json --metrics=off --max-memory 200 -j 2`,{cwd: tmpDir})
     JSON.parse(stdout).result?.map((vuln: any) =>{
             results.push({
@@ -88,29 +103,42 @@ const semgrepScan = async(tmpDir: string, jobId: string) =>{
 }
 
 const handleScan = async(scanId: string) =>{
-    const tmpDir = path.join('/tmp', `scan-${scanId}`)
-    const {repoUrl} = await redis.hgetall(`scan:meta:${scanId}`)
-    await run(`git clone --depth 1 ${repoUrl} ${tmpDir}`)
-    await Promise.all([
-        snykScan(tmpDir, scanId),
-        trivyScan(tmpDir, scanId),
-        semgrepScan(tmpDir, scanId)
-    ])
-    const raw = await redis.get(`scan:${scanId}`);
-    if (raw) {
-        const job = JSON.parse(raw);
-        job.result = results
-        job.status = 'done'
-        await redis.set(`scan:${scanId}`, JSON.stringify(job), 'EX', 1800);
-    }
-    results = []
-    await redis.lpop('scan:queue')
-    await redis.del(`scan:meta:${scanId}`)
-    await fs.rm(tmpDir, {recursive: true, force: true}).catch(console.error)
-    const nextScan = await redis.lindex(`scan:queue`, 0)
-    if(nextScan) {
-        const nextScanIds = await redis.lrange('scan:queue', 0, -1)
-        handleScan(nextScanIds[0])
+    try{
+        const results: normalizedResult[] = []
+        const tmpDir = path.join('/tmp', `scan-${scanId}`)
+        const {repoUrl} = await redis.hgetall(`scan:meta:${scanId}`)
+        await run(`git clone --depth 1 ${repoUrl} ${tmpDir}`)
+        await Promise.all([
+            snykScan(tmpDir, scanId, results),
+            trivyScan(tmpDir, scanId, results),
+            semgrepScan(tmpDir, scanId, results)
+        ])
+        const raw = await redis.get(`scan:${scanId}`);
+        if (raw) {
+            const job = JSON.parse(raw);
+            job.result = results
+            job.status = 'done'
+            console.log('setting final result: ' + scanId)
+            await redis.set(`scan:${scanId}`, JSON.stringify(job), 'EX', 1800);
+        }
+        await redis.lpop('scan:queue')
+        await redis.del(`scan:meta:${scanId}`)
+        await fs.rm(tmpDir, {recursive: true, force: true}).catch(console.error)
+        const nextScan = await redis.lindex(`scan:queue`, 0)
+        if(nextScan) {
+            const nextScanIds = await redis.lrange('scan:queue', 0, -1)
+            handleScan(nextScanIds[0])
+        }
+    }catch(err){
+        console.error('Scan crashed', err)
+        await redis.set(`scan:${scanId}`, JSON.stringify({status: 'failed', result:[]}), 'EX', 1800)
+    }finally{
+        await redis.lpop(`scan:queue`)
+        await redis.del(`scan:meta:${scanId}`)
+        const nextScan = await redis.lindex(`scan:queue`,0)
+        if(nextScan){
+            handleScan(nextScan)
+        }
     }
     
 }
@@ -143,9 +171,11 @@ try {
         const {owner, repo} = await req.json()
         if(!owner || !repo) return NextResponse.json({error: 'repoUrl is required'}, {status: 400})
         const repoUrl = `https://github.com/${owner}/${repo}.git`
-        
-        //memory checking
+         
         const resp = await fetch(`https://api.github.com/repos/${owner}/${repo}`)
+        if(!resp){
+            return NextResponse.json({error: 'Repository not found or inaccessible'},{status:404, headers:{'Access-Control-Allow-Origin': '*'}})
+        }
         const json = await resp.json()
         const sizeKb = parseInt(json.size);
         const sizeMb = Math.ceil(sizeKb / 1024);
@@ -168,6 +198,7 @@ try {
 
         //clone the dir to tmp dir
         await redis.set(`scan:${scanId}`, JSON.stringify({ status: 'pending', result: [] }), 'EX', 1800);
+        console.log("Redis Scan  key: " + scanId)
         handleScan(scanId)
         return NextResponse.json({scanId}, {
             status: 200, 
