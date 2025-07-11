@@ -28,7 +28,7 @@ export default function RepoPage(){
             setScanId(scanId)
             localStorage.setItem('lastScan', JSON.stringify({scanId, owner, repo}))
             if(response.status === 200) setScanMsg('Scanning...🔎')
-            else setScanMsg('Queueing, position: ...')
+            else setScanMsg('Queueing')
         }else{
             const {error} = await response.json()
             setError(error)
