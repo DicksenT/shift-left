@@ -1,59 +1,73 @@
-# === Stage 1: Build app ===
-FROM node:20-alpine AS builder
+# === Stage 1: Builder (Alpine) ===
+FROM node:20-alpine3.19 AS builder
 
 ENV NODE_OPTIONS="--max_old_space_size=2048"
 
-RUN apk add --no-cache git bash curl python3 py3-pip wget
+# Install tools needed to build and fetch binaries
+RUN apk add --no-cache \
+    git bash curl wget python3
 
-# Install Snyk locally
+# Install Snyk
 WORKDIR /tools
-RUN npm install snyk
+RUN npm install snyk@latest
 ENV PATH="/tools/node_modules/.bin:$PATH"
 
-# Install Trivy binary
-RUN wget -q https://github.com/aquasecurity/trivy/releases/download/v0.63.0/trivy_0.63.0_Linux-64bit.tar.gz \
-  && tar -xzf trivy_0.63.0_Linux-64bit.tar.gz \
-  && mv trivy /usr/local/bin/ \
-  && chmod +x /usr/local/bin/trivy \
-  && rm trivy_0.63.0_Linux-64bit.tar.gz LICENSE README.md
+# Install Trivy
+RUN wget -qO /tmp/trivy.tar.gz \
+      https://github.com/aquasecurity/trivy/releases/download/v0.63.0/trivy_0.63.0_Linux-64bit.tar.gz && \
+    tar -xzf /tmp/trivy.tar.gz -C /tmp && \
+    mv /tmp/trivy /usr/local/bin/trivy && \
+    chmod +x /usr/local/bin/trivy && \
+    rm /tmp/trivy.tar.gz
 
-# Install Semgrep
-RUN python3 -m venv /opt/venv \
-  && /opt/venv/bin/pip install semgrep \
-  && ln -s /opt/venv/bin/semgrep /usr/local/bin/semgrep
-
-# App code
+# Build Next.js app
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci
+RUN npm ci --omit=dev
 COPY . .
 RUN npm run build
 
-# === Stage 2: Final runtime ===
-FROM node:20-alpine
+# === Stage 2: Runtime (Debian-slim) ===
+FROM node:20-slim
 
-ENV NODE_ENV=production
-ENV NODE_OPTIONS="--max_old_space_size=2048"
+ENV NODE_ENV=production \
+    NODE_OPTIONS="--max_old_space_size=2048" \
+    SEMGREP_CACHE_DIR=/opt/semgrep-cache
 
-RUN apk add --no-cache git
+# Install Python venv support + curl/git for healthcheck
+RUN apt-get update && apt-get install -y \
+      python3 python3-venv git curl && \
+    rm -rf /var/lib/apt/lists/*
 
-# Snyk
+# Create a venv and install Semgrep with memory + job limits
+RUN python3 -m venv /opt/venv && \
+    /opt/venv/bin/pip install --no-cache-dir semgrep
+
+# Copy Snyk & Trivy from builder
 COPY --from=builder /tools /tools
-ENV PATH="/tools/node_modules/.bin:$PATH"
-
-# Trivy + Semgrep
 COPY --from=builder /usr/local/bin/trivy /usr/local/bin/trivy
-COPY --from=builder /usr/local/bin/semgrep /usr/local/bin/semgrep
-COPY --from=builder /opt/venv /opt/venv
-ENV PATH="/opt/venv/bin:$PATH:$PATH"
 
-# Next.js build
+# Expose semgrep and snyk in PATH
+ENV PATH="/tools/node_modules/.bin:/opt/venv/bin:$PATH"
+
+# Verify all tools are present at build-time
+RUN semgrep --version \
+ && snyk --version \
+ && trivy --version
+
+# Copy in the built Next.js app
 WORKDIR /app
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next/standalone ./
+COPY --from=builder --chown=node:node /app/public ./public
+COPY --from=builder --chown=node:node /app/.next/standalone ./
+COPY --from=builder --chown=node:node /app/.next/static ./.next/static
 
-# Change port to Koyeb default
-ENV PORT=8080
+# Drop to non-root user for security
+USER node
+
 EXPOSE 8080
+ENV PORT=8080
+
+HEALTHCHECK --interval=30s --timeout=3s \
+  CMD curl -f http://localhost:8080/api/health || exit 1
 
 CMD ["node", "server.js"]
