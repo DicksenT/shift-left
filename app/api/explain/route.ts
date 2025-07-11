@@ -8,7 +8,7 @@ export async function POST(req: NextRequest) {
   const { text } = await generateText({
     model: openai('gpt-4o-mini'),
   system: `
-You are a security expert. Explain the vulnerability clearly in one sentence using fewer than 25 words. Avoid repeating phrases or ideas. Do not use formatting or technical jargon.
+You are a security expert. Explain the vulnerability clearly in one sentence and the impact on business. Avoid repeating phrases or ideas. Do not use formatting or technical jargon.
 `.trim(),
     prompt: desc,
   });
