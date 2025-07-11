@@ -173,7 +173,7 @@ try {
         const repoUrl = `https://github.com/${owner}/${repo}.git`
          
         const resp = await fetch(`https://api.github.com/repos/${owner}/${repo}`)
-        if(!resp){
+        if(!resp.ok){
             return NextResponse.json({error: 'Repository not found or inaccessible'},{status:404, headers:{'Access-Control-Allow-Origin': '*'}})
         }
         const json = await resp.json()
